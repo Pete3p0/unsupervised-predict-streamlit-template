@@ -36,6 +36,8 @@ from surprise import Reader, Dataset
 from surprise import SVD, NormalPredictor, BaselineOnly, KNNBasic, NMF
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
+from scipy.sparse import csr_matrix
+import scipy as sp
 
 # Importing data
 movies_df = pd.read_csv('resources/data/movies.csv',sep = ',',delimiter=',')
@@ -123,21 +125,45 @@ def collab_model(movie_list,top_n=10):
     df_init_users = ratings_df[ratings_df['userId']==movie_ids[0]]
     for i in movie_ids :
         df_init_users=df_init_users.append(ratings_df[ratings_df['userId']==i])
+
+    # My additional code
+        # Pivot
+    df_init_users=df_init_users.pivot_table(index=['movieId'], columns=['userId'], values='rating')
+        # Normalize the values
+    df_init_users_norm = df_init_users.apply(lambda x: (x-np.mean(x))/(np.max(x)-np.min(x)), axis=1)
+
+        # Fill missing values with zeroes and drop any column consisting only of zeros (users that did not rate)
+    df_init_users_norm.fillna(0, inplace=True)
+    df_init_users_norm = df_init_users_norm.loc[:, (df_init_users_norm != 0).any(axis=0)]
+
+        # Transform pivot table to sparse matrix format to be read by the cosine similarity functions
+    df_init_users_sparse = sp.sparse.csr_matrix(df_init_users_norm.values)
+    
+        # Getting the cosine similarity matrix
+    cosine_sim = cosine_similarity(df_init_users_sparse)
+    
+        # Fill diagonal elements with 0
+    np.fill_diagonal(cosine_sim, 0)
+
+        # Transform similarity matrix back into dataframe
+    item_sim_df = pd.DataFrame(cosine_sim, index=df_init_users_norm.index, columns=df_init_users_norm.index)
+    
+    
     # Getting the cosine similarity matrix
-    cosine_sim = cosine_similarity(np.array(df_init_users), np.array(df_init_users))
+    # cosine_sim = cosine_similarity(np.array(df_init_users), np.array(df_init_users))
     idx_1 = indices[indices == movie_list[0]].index[0]
     idx_2 = indices[indices == movie_list[1]].index[0]
     idx_3 = indices[indices == movie_list[2]].index[0]
     # Creating a Series with the similarity scores in descending order
-    rank_1 = cosine_sim[idx_1]
-    rank_2 = cosine_sim[idx_2]
-    rank_3 = cosine_sim[idx_3]
+    rank_1 = item_sim_df[idx_1]
+    rank_2 = item_sim_df[idx_2]
+    rank_3 = item_sim_df[idx_3]
     # Calculating the scores
     score_series_1 = pd.Series(rank_1).sort_values(ascending = False)
     score_series_2 = pd.Series(rank_2).sort_values(ascending = False)
     score_series_3 = pd.Series(rank_3).sort_values(ascending = False)
      # Appending the names of movies
-    listings = score_series_1.append(score_series_1).append(score_series_3).sort_values(ascending = False)
+    listings = score_series_1.append(score_series_1).append(score_series_2).append(score_series_3).sort_values(ascending = False)
     recommended_movies = []
     # Choose top 50
     top_50_indexes = list(listings.iloc[1:50].index)
