@@ -147,6 +147,7 @@ def collab_model(movie_list,top_n=10):
     # My additional code
         # Pivot
     df_init_users=df_init_users.pivot_table(index=['movieId'], columns=['userId'], values='rating')
+        
         # Normalize the values
     df_init_users_norm = df_init_users.apply(lambda x: (x-np.mean(x))/(np.max(x)-np.min(x)), axis=1)
 
