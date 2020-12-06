@@ -120,12 +120,30 @@ def collab_model(movie_list,top_n=10):
 
     """
 
+def collab_model(movie_list,top_n=10):
+    """Performs Collaborative filtering based upon a list of movies supplied
+       by the app user.
+
+    Parameters
+    ----------
+    movie_list : list (str)
+        Favorite movies chosen by the app user.
+    top_n : type
+        Number of top recommendations to return to the user.
+
+    Returns
+    -------
+    list (str)
+        Titles of the top-n movie recommendations to the user.
+
+    """
+
     indices = pd.Series(movies_df['title'])
     movie_ids = pred_movies(movie_list)
     df_init_users = ratings_df[ratings_df['userId']==movie_ids[0]]
     for i in movie_ids :
         df_init_users=df_init_users.append(ratings_df[ratings_df['userId']==i])
-
+        
     # My additional code
         # Pivot
     df_init_users=df_init_users.pivot_table(index=['movieId'], columns=['userId'], values='rating')
@@ -150,10 +168,10 @@ def collab_model(movie_list,top_n=10):
     
     
     # Getting the cosine similarity matrix
-    # cosine_sim = cosine_similarity(np.array(df_init_users), np.array(df_init_users))
-    idx_1 = indices[indices == movie_list[0]].index[0]
-    idx_2 = indices[indices == movie_list[1]].index[0]
-    idx_3 = indices[indices == movie_list[2]].index[0]
+#     cosine_sim = cosine_similarity(df_init_users_sparse)
+    idx_1 = item_sim_df[item_sim_df == cosine_sim[0]].index[0]
+    idx_2 = item_sim_df[item_sim_df == cosine_sim[1]].index[0]
+    idx_3 = item_sim_df[item_sim_df == cosine_sim[2]].index[0]
     # Creating a Series with the similarity scores in descending order
     rank_1 = item_sim_df[idx_1]
     rank_2 = item_sim_df[idx_2]
