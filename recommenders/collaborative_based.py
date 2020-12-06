@@ -120,24 +120,6 @@ def collab_model(movie_list,top_n=10):
 
     """
 
-def collab_model(movie_list,top_n=10):
-    """Performs Collaborative filtering based upon a list of movies supplied
-       by the app user.
-
-    Parameters
-    ----------
-    movie_list : list (str)
-        Favorite movies chosen by the app user.
-    top_n : type
-        Number of top recommendations to return to the user.
-
-    Returns
-    -------
-    list (str)
-        Titles of the top-n movie recommendations to the user.
-
-    """
-
     indices = pd.Series(movies_df['title'])
     movie_ids = pred_movies(movie_list)
     df_init_users = ratings_df[ratings_df['userId']==movie_ids[0]]
